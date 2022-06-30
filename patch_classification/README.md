@@ -49,7 +49,7 @@ pip install scikit-learn
 pip install scikit-image
 pip install matplotlib
 # Add to Jupyter
-pip install jupyter
+pip install notebook
 python -m ipykernel install --user --name=patch_classification
 ```
 
