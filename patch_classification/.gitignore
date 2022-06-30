@@ -1,0 +1,7 @@
+datasets
+evaluations
+trained_models
+venv
+tensorboard_runs
+.idea
+__pycache__
