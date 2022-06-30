@@ -277,7 +277,7 @@ def get_args_parser(add_help=True):
     parser.add_argument("--data_path", default="./datasets/Railsem19Croppedv1.h5", type=str, help="dataset path")
     parser.add_argument("--train_fraction", default=0.9, type=float, help="fraction of train images")
     parser.add_argument("--model", default="patchsegmodellight", type=str, help="model name")
-    parser.add_argument("--run_name", default="aa_euler", type=str, help="name of training run")
+    parser.add_argument("--run_name", default="student", type=str, help="name of training run")
     parser.add_argument("--device", default="cuda", type=str, help="device (Use cuda or cpu Default: cuda)")
     parser.add_argument(
         "-b", "--batch_size", default=1, type=int, help="images per gpu, the total batch size is $NGPU x batch_size"
@@ -299,7 +299,7 @@ def get_args_parser(add_help=True):
         dest="weight_decay",
     )
     parser.add_argument("--print_freq", default=10, type=int, help="print frequency")
-    parser.add_argument("--stages", default=2, type=int, help="number of stages for patchsegmodellight")
+    parser.add_argument("--stages", default=2, type=int, help="number of stages of neural network, stages=1 corresponds to patch_size of 17, stages=2 to 33, stage=3 to 65")
     parser.add_argument("--output_dir", default="./trained_models", type=str, help="path to save outputs")
     parser.add_argument("--resume", default="", type=str, help="path of checkpoint")
     parser.add_argument("--teacher_checkpoint", default="", type=str, help="path of teacher checkpoint")

@@ -527,7 +527,6 @@ def main(args):
     std_e, std_v = compute_std(args, teacher, student1, student2, student3, data_loader_val, device, mean_e, mean_v, mean_teacher, std_teacher)
     mean = {"teacher": mean_teacher, "e": mean_e, "v": mean_v}
     std = {"teacher": std_teacher, "e": std_e, "v": std_v}
-    #overall_max = compute_max(args, teacher, student1, student2, student3, data_loader_test, device, mean=mean, std=std)
     evaluate(args, teacher, student1, student2, student3, data_loader_test, device=device, vis_path=args.output_path, mean=mean, std=std, overall_max=args.overall_max)
     return
 
@@ -549,12 +548,12 @@ def get_args_parser(add_help=True):
     parser.add_argument("--student3_checkpoint", default="./trained_models/student3.pth", type=str,
                         help="path of student3 checkpoint")
     parser.add_argument("--max_num_images", default=4000, type=int, help="max number of images to be evaluated")
-    parser.add_argument("--theta_visualize", default=0.0, type=float, help="which threshold to visualize")
-    parser.add_argument("--stages", default=7, type=int, help="number of stages")
+    parser.add_argument("--theta_visualize", default=0.0, type=float, help="which threshold theta to visualize")
+    parser.add_argument("--stages", default=7, type=int, help="number of stages of neural network, stages=1 corresponds to patch_size of 17, stages=2 to 33, stage=3 to 65")
     parser.add_argument("--k_d", default=29, type=int, help="obstacle threshold (patch density)")
     parser.add_argument("--rails_only", default=1, type=int, help="whether to evaluate on rails only")
     parser.add_argument("--train_fraction", default=0.9, type=float, help="fraction of train images")
-    parser.add_argument("--overall_max", default=5.0, type=float, help="maximum value to consider segmentation map")
+    parser.add_argument("--overall_max", default=5.0, type=float, help="maximum value to consider in segmentation map")
 
     return parser
 

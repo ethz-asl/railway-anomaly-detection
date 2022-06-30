@@ -19,81 +19,6 @@ from matplotlib import pyplot as plt
 from patchclass_networks import PatchClassModel, PatchSegModelLight
 from torchvision.transforms import functional as F
 
-def compute_max(args, model, ae_model, data_loader, device, mean=None, std=None):
-    if ae_model:
-        ae_model.eval()
-    if model:
-        model.eval()
-    header = "Compute max:"
-    overall_max = 0
-
-    metric_logger = utils.MetricLogger(delimiter="  ")
-    with torch.no_grad():
-        for idx, (image_fishy, target_fishy, image_orig, target_orig) in enumerate(metric_logger.log_every(data_loader, 100, header)):
-            print(f"Compute max for Image {idx} ...")
-            if idx > args.max_num_images:
-                break
-            # Go over fishy:
-            for mode in ["fishy", "orig"]:
-                # Prepare everything
-                if mode == "fishy":
-                    image, target_seg = image_fishy.to(device), target_fishy.to(device)
-                elif mode == "orig":
-                    image, target_seg = image_orig.to(device), target_orig.to(device)
-                target_seg_orig = target_orig.clone().to(device)
-
-                # Visualize original image
-                if args.g_act == "tanh":
-                    image_target_ae, _ = presets.denormalize_tanh(image, image)  # (-1, 1)
-                    image_vis, _ = presets.re_convert_tanh(image_target_ae, image_target_ae)
-                else:
-                    image_target_ae, _ = presets.denormalize(image, image)  # (0, 1)
-                    image_vis, _ = presets.re_convert(image_target_ae, image_target_ae)
-
-                # Mask for evaluation (discard background)
-                if args.rails_only > 0:
-                    evaluation_mask = target_seg_orig == 1
-                    target_seg[torch.logical_not(evaluation_mask)] = 0
-                    evaluation_mask = evaluation_mask.squeeze()
-                else:
-                    evaluation_mask = torch.logical_or(target_seg == 2, target_seg == 1).squeeze()
-
-                if ae_model and args.ae_model != "patchsegmodellight":
-                    # Run  AE inference
-                    with torch.no_grad():
-                        outputs = ae_model(image)
-                    output_ae = outputs["out_aa"]
-
-                # Prepare input for PatchSeg model (not required here)
-                input_seg = image
-
-                # Inference
-                if args.model == "mse":
-                    if args.g_act == "tanh":
-                        image_target_ae = (image_target_ae / 2) + 0.5
-                        output_ae = (output_ae / 2) + 0.5
-                    output_seg = torch.squeeze(torch.sqrt(torch.square(image_target_ae - output_ae)))
-                    output_seg = torch.mean(output_seg, dim=0)
-                elif args.model == "ssim":
-                    ssim = SSIM(11)
-                    if args.g_act == "tanh":
-                        image_target_ae = (image_target_ae / 2) + 0.5
-                        output_ae = (output_ae / 2) + 0.5
-                    output_seg = torch.squeeze(ssim(image_target_ae, output_ae))*2 # seems like SSIM output is in range (0, 0.5)
-                    output_seg = torch.mean(output_seg, dim=0)
-                elif args.model == "patchsegmodellight" and args.ae_model == "patchsegmodellight": # Student Teacher
-                    with torch.no_grad():
-                        outputs_teacher = ae_model(input_seg)["descriptor"]
-                        normalized_teacher = F.normalize(outputs_teacher, mean=mean, std=std).clone().detach()
-                        outputs_student = model(input_seg)["descriptor"]
-                        output_seg = torch.squeeze(torch.sqrt(torch.square(normalized_teacher - outputs_student)))
-                        output_seg = torch.mean(output_seg, dim=0)
-                # Update overall max
-                max = torch.max(output_seg)
-                if max > overall_max:
-                    overall_max = max
-    return overall_max
-
 
 def evaluate(args, ae_model, model, data_loader, device, num_classes, vis_path=None, mean=None, std=None):
     if ae_model:
@@ -124,13 +49,6 @@ def evaluate(args, ae_model, model, data_loader, device, num_classes, vis_path=N
         stat_book["conf_correct"].append({"tp": 0, "fp": 0, "tn": 0, "fn": 0})
     stat_book["auroc_data"] = np.zeros((1001, 2))
 
-    # Compute max if necessary:
-    # if args.model == "mse" or args.model == "ssim":
-    #     overall_max = compute_max(args, model, ae_model, data_loader, device, mean=mean, std=std)
-    # elif args.model == "patchsegmodellight" and args.ae_model == "patchsegmodellight":  # Student Teacher
-    #     overall_max = compute_max(args, model, ae_model, data_loader, device, mean=mean, std=std)
-    # else:
-    #     overall_max = 1
     overall_max = 1
     print(f"Overall Max: {overall_max}")
 
@@ -596,7 +514,7 @@ def main(args):
                 pretrained=False,
                 pretrained_backbone=False,
                 num_classes=2,
-                aux_loss=args.seg_aux_loss,
+                aux_loss=False,
             )
         #model.backbone.conv1 = nn.Conv2d(6, 64, kernel_size=(7,7), stride=(2,2), padding=(3,3), bias=False)
     elif args.model == "patchsegmodellight_patch30":
@@ -633,24 +551,22 @@ def get_args_parser(add_help=True):
     parser.add_argument("--model", default="deeplabv3_resnet50", type=str, help="model name")
     parser.add_argument("--output_path", default="./evaluation", type=str, help="output directory")
     parser.add_argument("--device", default="cpu", type=str, help="device (Use cuda or cpu)")
-    parser.add_argument("--checkpoint", default="./trained_models/ganseg_001_model_70.pth", type=str,
+    parser.add_argument("--checkpoint", default="./trained_models/patchclass_model_10.pth", type=str,
                         help="path of checkpoint")
     parser.add_argument("--ae_checkpoint", default="./trained_models/ganaesegparam02_8810_01000_017_model_199.pth", type=str, help="path of checkpoint")
-    parser.add_argument("--obs_threshold", default=1, type=float, help="threshold for obstacle segmentation")
     parser.add_argument("--ae_model", default="AeSegParam02_8810", type=str, help="Autoencoder Type")
-    parser.add_argument("--color_space_ratio", default=0.1, type=float, help="color space ratio for each channel")
+    parser.add_argument("--color_space_ratio", default=0.1, type=float, help="color space ratio for each channel, NOT relevant for our experiments")
     parser.add_argument("--max_num_images", default=4000, type=int, help="max number of images to be evaluated")
     parser.add_argument("--g_act", default="tanh", type=str, help="generator activation")
     parser.add_argument("--theta_visualize", default=0.0, type=float, help="which obstacle threshold to visualize")
-    parser.add_argument("--seg_aux_loss", action="store_true", help="auxiliar loss")
     parser.add_argument(
         "--seg_pretrained",
         dest="seg_pretrained",
         help="Use pre-trained models from the modelzoo",
         action="store_true",
     )
-    parser.add_argument("--stages", default=7, type=int, help="number of stages")
-    parser.add_argument("--k_d", default=29, type=int, help="patch density size k_d")
+    parser.add_argument("--stages", default=1, type=int, help="Number of stages of the Patch Classification network. Stage 0 corresponds to patch size 13, 1 to 21, 2 to 29, 3 to 35, and 4 to 51.")
+    parser.add_argument("--k_d", default=21, type=int, help="patch density size k_d")
     parser.add_argument("--rails_only", default=1, type=int, help="whether to evaluate on rails only")
 
     return parser

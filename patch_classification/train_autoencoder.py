@@ -508,7 +508,7 @@ def get_args_parser(add_help=True):
     parser.add_argument("--data_path", default="./datasets/Railsem19Croppedv1.h5", type=str, help="dataset path")
     parser.add_argument("--seed", default=0, type=str, help="Seed for random generator")
     parser.add_argument("--train_fraction", default=0.9, type=float, help="fraction of train images")
-    parser.add_argument("--run_name", default="ae+seg_euler", type=str, help="name of training run")
+    parser.add_argument("--run_name", default="ae", type=str, help="name of training run")
     parser.add_argument("--device", default="cuda", type=str, help="device (Use cuda or cpu Default: cuda)")
     parser.add_argument(
         "-b", "--batch_size", default=8, type=int, help="images per gpu, the total batch size is $NGPU x batch_size"
@@ -520,8 +520,6 @@ def get_args_parser(add_help=True):
     )
     parser.add_argument("--lr", default=0.01, type=float, help="initial learning rate")
     parser.add_argument("--lr_d", default=0.01, type=float, help="initial learning rate of discriminator")
-    parser.add_argument("--d_bottleneck", default=2000, type=int, help="bottleneck dimension")
-    parser.add_argument("--w_fm", default=0.0, type=float, help="feature matching weight")
     parser.add_argument("--ae_type", default="AeSegParam02_8810", type=str, help="which Autoencoder")
     parser.add_argument("--momentum", default=0.9, type=float, metavar="M", help="momentum")
     parser.add_argument(
@@ -546,7 +544,7 @@ def get_args_parser(add_help=True):
     parser.add_argument("--g_act", default="tanh", type=str, help="generator activation")
     parser.add_argument("--hist_cs", default="yuv", type=str, help="histogram color space")
     parser.add_argument("--label_smoothing", default=0.9, type=float, help="label smoothing parameter, should be close to 1")
-    parser.add_argument("--color_space_ratio", default=0.1, type=float, help="color space ratio for each channel")
+    parser.add_argument("--color_space_ratio", default=0.1, type=float, help="color space ratio for each channel, NOT relevant for our experiments")
     parser.add_argument("--output_dir", default="./trained_models", type=str, help="path to save outputs")
     parser.add_argument("--resume", default="", type=str, help="path of checkpoint")
     parser.add_argument("--start_epoch", default=0, type=int, metavar="N", help="start epoch")

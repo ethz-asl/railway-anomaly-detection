@@ -248,7 +248,7 @@ def get_args_parser(add_help=True):
     parser.add_argument("--seed", default=0, type=int, help="Seed for random generator")
     parser.add_argument("--model", default="patchsegmodellight", type=str, help="patchsegmodellight")
     parser.add_argument("--train_fraction", default=0.9, type=float, help="fraction of train images")
-    parser.add_argument("--run_name", default="teacher_euler", type=str, help="name of training run")
+    parser.add_argument("--run_name", default="teacher", type=str, help="name of training run")
     parser.add_argument("--device", default="cuda", type=str, help="device (Use cuda or cpu Default: cuda)")
     parser.add_argument(
         "-b", "--batch_size", default=8, type=int, help="images per gpu, the total batch size is $NGPU x batch_size"
@@ -280,8 +280,8 @@ def get_args_parser(add_help=True):
         help="Only test the model",
         action="store_true",
     )
-    parser.add_argument("--stages", default=2, type=int, help="number of stages")
-    parser.add_argument("--patch_size", default=32, type=int, help="number of stages")
+    parser.add_argument("--stages", default=2, type=int, help="number of stages of neural network, stages=1 corresponds to patch_size of 17, stages=2 to 33, stage=3 to 65")
+    parser.add_argument("--patch_size", default=32, type=int, help="student patch size for training")
     return parser
 
 

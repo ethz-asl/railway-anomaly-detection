@@ -199,7 +199,7 @@ if __name__ == "__main__":
                         help='seed')
     parser.add_argument("--ae_type", default="AeSegParam02_8810", type=str, help="which Autoencoder")
     parser.add_argument("--device", default="cpu", type=str, help="device (Use cuda or cpu Default: cuda)")
-    parser.add_argument("--checkpoint", default="./trained_models/ganaesegparam02_8810_01000_711_model_190.pth", type=str,
+    parser.add_argument("--checkpoint", default="./trained_models/ae_model_199.pth", type=str,
                         help="path of checkpoint")
     parser.add_argument("--g_act", default="tanh", type=str, help="generator activation")
     parser.add_argument("--color_space_ratio", default=0.1, type=float, help="color space ratio for each channel")

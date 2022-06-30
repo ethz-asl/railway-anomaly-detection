@@ -171,7 +171,7 @@ def main(args):
                 pretrained=False,
                 pretrained_backbone=args.pretrained_backbone>0,
                 num_classes=2,
-                aux_loss=args.aux_loss,
+                aux_loss=False,
             )
         # model.backbone.conv1 = nn.Conv2d(dataset.channels, 64, kernel_size=(7,7), stride=(2,2), padding=(3,3), bias=False)
     elif args.model == "patchclassmodel":
@@ -205,9 +205,6 @@ def main(args):
             {"params": [p for p in model.classifier.parameters() if p.requires_grad]},
         ]
 
-    if args.aux_loss:
-        params = [p for p in model.aux_classifier.parameters() if p.requires_grad]
-        params_to_optimize.append({"params": params, "lr": args.lr * 10})
     optimizer = torch.optim.SGD(params_to_optimize, lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 
     lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
@@ -278,7 +275,7 @@ def get_args_parser(add_help=True):
     parser.add_argument("--seed", default=0, type=str, help="Seed for random generator")
     parser.add_argument("--model", default="patchclassmodel", type=str, help="deeplabv3_resnet50 or patchclassmodel")
     parser.add_argument("--train_fraction", default=0.9, type=float, help="fraction of train images")
-    parser.add_argument("--run_name", default="ganseg_euler", type=str, help="name of training run")
+    parser.add_argument("--run_name", default="patchclass", type=str, help="name of training run")
     parser.add_argument("--device", default="cuda", type=str, help="device (Use cuda or cpu Default: cuda)")
     parser.add_argument(
         "-b", "--batch_size", default=8, type=int, help="images per gpu, the total batch size is $NGPU x batch_size"
@@ -311,10 +308,9 @@ def get_args_parser(add_help=True):
         action="store_true",
     )
     parser.add_argument("--pretrained_backbone", default=1, type=int, help="use pretrained backbone for deeplabv3?")
-    parser.add_argument("--flip", default=0.5, type=float, help="flip probability for original image")
-    parser.add_argument("--crop", default=0.8, type=float, help="crop probability for original image")
-    parser.add_argument("--stages", default=7, type=int, help="number of stages")
-    parser.add_argument("--aux_loss", action="store_true", help="auxiliar loss")
+    parser.add_argument("--flip", default=0.5, type=float, help="flip probability for original image during data loading")
+    parser.add_argument("--crop", default=0.8, type=float, help="crop probability for original image during data loading")
+    parser.add_argument("--stages", default=1, type=int, help="Number of stages of the Patch Classification network. Stage 0 corresponds to patch size 13, 1 to 21, 2 to 29, 3 to 35, and 4 to 51.")
     parser.add_argument("--dataset", default="patch", type=str, help="which dataset to use")
     parser.add_argument("--optimize_with_mask", default=0, type=int, help="whether to apply segmentation mask to the networks output before optimization")
     parser.add_argument("--ce_weight_1", default=0.5, type=float, help="cross entropy weight of class 1, class 0 will get 1 - that")
