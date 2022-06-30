@@ -58,11 +58,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--input_path',
                         type=str,
-                        default="/media/matthias/sandisk/datasets/Railsem19CroppedDebug",
+                        default="/path/to/Railsem19Croppedv1",
                         help='path to the directory structure to be stored as hdf5 file')
     parser.add_argument('--output_name',
                         type=str,
-                        default="Railsem19CroppedDebug",
+                        default="Railsem19Croppedv1",
                         help='name of output hdf5 file')
     parser.add_argument('--with_params',
                         type=int,

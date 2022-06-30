@@ -170,7 +170,7 @@ def main(args):
                     output_aa_re_pil, _ = presets.re_convert(output_ae, output_ae)
 
                 # Save image in hdf5
-                cache_path = os.path.join("/media/matthias/sandisk/datasets/", "cache_gan.png")
+                cache_path = os.path.join(args.cache_path, "cache_gan.png")
                 output_aa_re_pil.save(cache_path)
 
                 with open(cache_path, 'rb') as image_f:
@@ -181,13 +181,17 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument('--cache_path',
+                        type=str,
+                        default="/tmp/",
+                        help='path folder for intermediate storage')
     parser.add_argument('--input_path',
                         type=str,
-                        default="/media/matthias/sandisk/datasets/Railsem19Croppedv1.h5",
+                        default="/path/to/Railsem19Croppedv1.h5",
                         help='path to the input .h5 file')
     parser.add_argument('--output_path',
                         type=str,
-                        default="Railsem19CroppedGan711v1.h5",
+                        default="Railsem19CroppedAEv1.h5",
                         help='path to the output .h5 file')
     parser.add_argument('--seed',
                         type=int,

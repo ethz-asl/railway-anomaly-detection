@@ -62,11 +62,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--input_path',
                         type=str,
-                        default="/media/matthias/sandisk/datasets/FishyrailsCroppedDebug",
+                        default="/path/to/FishyrailsCroppedv1",
                         help='path to the directory structure to be stored as hdf5 file')
     parser.add_argument('--output_name',
                         type=str,
-                        default="FishyrailsCroppedDebug",
+                        default="FishyrailsCroppedv1",
                         help='name of output hdf5 file')
     args = parser.parse_args()
     main(args)

@@ -252,11 +252,11 @@ if __name__ == "__main__":
                         help='fishyrails or rs19')
     parser.add_argument('--output_path',
                         type=str,
-                        default="/media/matthias/sandisk/datasets/Railsem19CroppedDebug",
+                        default="/path/to/Railsem19Croppedv1",
                         help='fishyrails or rs19')
     parser.add_argument('--input_path',
                         type=str,
-                        default="/media/matthias/sandisk/datasets/rs19_val",
+                        default="/path/to/rs19_val",
                         help='rs19_val or fishyrails directory')
     args = parser.parse_args()
     MODE = "fishyrails"  # "rs19" or "fishyrails"

@@ -44,7 +44,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--input_path',
                         type=str,
-                        default="/media/matthias/sandisk/datasets/ImageNet",
+                        default="/path/to/ImageNet",
                         help='path to the directory structure to be stored as hdf5 file')
     parser.add_argument('--output_name',
                         type=str,

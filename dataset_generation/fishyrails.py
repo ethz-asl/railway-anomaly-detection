@@ -516,15 +516,15 @@ if __name__ == "__main__":
                             help='minimum distance between rails to place obstacle there')
     parser.add_argument('--output_path',
                             type=str,
-                            default="/media/matthias/sandisk/datasets/FishyscapesFull1",
+                            default="/path/to/Fishyrailsv1",
                             help='output path')
     parser.add_argument('--input_path_rs19',
                             type=str,
-                            default="/media/matthias/sandisk/datasets/rs19_val",
+                            default="/path/to/rs19_val",
                             help='input path to rs19')
     parser.add_argument('--input_path_voc',
                             type=str,
-                            default="/media/matthias/sandisk/datasets/VOCtrainval_11-May-2012/VOCdevkit/VOC2012",
+                            default="/path/to/VOCtrainval_11-May-2012/VOCdevkit/VOC2012",
                             help='input path to pascal voc')
     args = parser.parse_args()
 

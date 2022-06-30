@@ -34,7 +34,7 @@ pip install h5py
 python3 generate_image_crops.py --max_images 999999 --mode rs19 --input_path /path/to/datasets/rs19_val --output_path /path/to/datasets/Railsem19Croppedv1
 
 # Convert dataset to hdf5
-python3 railsem19cropped2hdf5 --input_path /media/matthias/sandisk/datasets/Railsem19Croppedv1 --output_name Railsem19Croppedv1
+python3 railsem19cropped2hdf5 --input_path /path/to/datasets/Railsem19Croppedv1 --output_name Railsem19Croppedv1
 ```
 
 ### Create FishyrailsCroppedv1
