@@ -103,7 +103,7 @@ python create_ae_dataset.py --input_path ./datasets/Railsem19Croppedv1.h5 --chec
 
 ## Train PatchClass / PatchDiff
 
-These are commands for training our PatchClass / PatchDiff models for a patch size of K_p = 21. For other patch sizes, have a look at runs_patchclass.sh 
+These are commands for training our PatchClass / PatchDiff models for a patch size of K_p = 21. For other patch sizes, have a look at ablation_study_runs/runs_patchclass.sh 
 ```
 # PatchClass21
 python train_patchclass.py --device cpu --lr 0.1 --batch_size 32 --output_dir ./trained_models --data_path ./datasets/Railsem19CroppedGANv1.h5 --data_path_in ./datasets/ImageNet.h5 --model patchclassmodel --stages 1 --save_freq 1 --optimize_with_mask 1 --use_gan 0 --run_name patchclass_21
@@ -179,7 +179,7 @@ python evaluate_patchclass_fishyrails.py --device cpu --data_path ./datasets/Fis
 ```
 
 ### Student Teacher 
-Here, we focus on the student teacher method with patch size 33. for other patch sizes, have a look at runs_teacher.sh, runs_students.sh, and evaluations_students.sh .
+Here, we focus on the student teacher method with patch size 33. for other patch sizes, have a look at runs_teacher.sh, runs_students.sh, and evaluations_students.sh in directory ablation_study_runs.
 
 First, train the teacher model.
 ```
