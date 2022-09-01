@@ -3,5 +3,7 @@ evaluations
 trained_models
 venv
 tensorboard_runs
+real_world_results
 .idea
 __pycache__
+.ipynb_checkpoints

@@ -53,6 +53,19 @@ pip install notebook
 python -m ipykernel install --user --name=patch_classification
 ```
 
+## Evaluate on Real-World dataset
+
+First, create a directory with your dataset similar to the real_world_dataset directory. 
+Images should be in <image_name>.png format, the corresponding masks should be named <image_name>_mask.png,
+and the annotations file <image_name>.txt should contain 5 integers separated by a space.
+The first one contains a 1 if there is an obstacle present and a 0 if not. The last 4 integers indicate the 
+left-most, up-most, right-most, down-most pixels of the obstacle bounding box. Then
+```
+cd railway-anomaly-detection/patch_classification 
+mkdir real_world_results # that's where results are stored  
+python real_world_evaluation --config patchclass --data_path /path/to/dataset/directory # check -h to see options for config
+```
+
 ## Train Auto-encoder
 
 You can train auto-encoders with the following commands:
@@ -69,7 +82,7 @@ python train_autoencoder.py --device cpu --lr 0.0001 --lr_d 0.0001 --momentum 0.
 # GAN+HIST AE
 python train_autoencoder.py --device cpu --lr 0.0001 --lr_d 0.0001 --momentum 0.5 --batch_size 16 --data_path ./datasets/Railsem19Croppedv1.h5 --output_dir ./trained_models --optimize_with_mask 0 --w_mse 0.0 --w_ssim 0.0 --w_gan 1.0 --w_emd 1.0 --w_mi 1.0 --optimizer adam --patience 200 --run_name ae_gan+hist
 ```
-For training on GPU, change the device argument to cuda. The outputs are stored in trained_models/run_name_datetime.
+For training on GPU, change the device argument to cuda. The outputs are stored in trained_models/RUNNAME_DATE_TIME.
 
 You can monitor training progress on tensorboard via 
 ```

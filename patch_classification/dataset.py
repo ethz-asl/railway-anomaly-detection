@@ -9,6 +9,7 @@ from torchvision.transforms import functional as F
 import random
 import presets
 import transforms
+import os
 
 
 
@@ -621,6 +622,53 @@ class ImageNetDatasetPatch(torch.utils.data.Dataset):
         patch_minus = transforms.imagenet_crop_augment(img_2, image_size_minus, self.patch_size, patch_minus_left, patch_minus_top, augment=False, grayscale=grayscale)
 
         return patch_orig, patch_plus, patch_minus
+
+    def __len__(self):
+        return len(self.images)
+
+
+class RealWorldDataset(torch.utils.data.Dataset):
+    def __init__(self, data_path):
+        self.root = data_path
+        all_files = [f for f in os.listdir(self.root) if os.path.isfile(os.path.join(self.root, f))]
+        masks = [os.path.join(self.root, f) for f in all_files if f.endswith("mask.png")]
+        images = [os.path.join(self.root, f) for f in all_files if
+                  f.endswith(".png") and not f.endswith("mask.png")]
+        names = [os.path.splitext(f)[0] for f in all_files if
+                  f.endswith(".png") and not f.endswith("mask.png")]
+        annotations = [os.path.join(self.root, f) for f in all_files if f.endswith(".txt")]
+        if len(images) != len(masks) or len(annotations) != len(images):
+            print(f"Error: {len(images)} Images but {len(masks)} masks and {len(annotations)} annotations!")
+            return
+        self.masks = sorted(masks)
+        self.images = sorted(images)
+        self.names = sorted(names)
+        print(self.names)
+        self.annotations = sorted(annotations)
+
+        print(f"Real World Dataset: {len(self.images)} images from {self.root}")
+
+    def __getitem__(self, idx):
+        pil_img = Image.open(self.images[idx])
+        pil_img = pil_img.convert("RGB")
+        img = np.array(pil_img)
+        pil_mask = Image.open(self.masks[idx])
+        pil_mask = pil_mask.convert("L")
+        mask = np.array(pil_mask)
+        with open(self.annotations[idx]) as f:
+            annotation = np.loadtxt(f)
+
+        img = torch.as_tensor(img) # to torch
+        img = img.permute((2, 0, 1))
+        img = F.convert_image_dtype(img, torch.float) # as float
+        img = F.normalize(img, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)) # normalized
+
+        mask = torch.as_tensor(mask, dtype=torch.int64)
+        mask = torch.unsqueeze(mask, 0)
+
+        name = self.names[idx]
+
+        return img, mask, annotation, name
 
     def __len__(self):
         return len(self.images)
