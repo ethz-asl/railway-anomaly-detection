@@ -633,9 +633,9 @@ class RealWorldDataset(torch.utils.data.Dataset):
         all_files = [f for f in os.listdir(self.root) if os.path.isfile(os.path.join(self.root, f))]
         masks = [os.path.join(self.root, f) for f in all_files if f.endswith("mask.png")]
         images = [os.path.join(self.root, f) for f in all_files if
-                  f.endswith(".png") and not f.endswith("mask.png")]
+                  (f.endswith(".png") or f.endswith(".jpg") or f.endswith(".jpeg")) and not f.endswith("mask.png")]
         names = [os.path.splitext(f)[0] for f in all_files if
-                  f.endswith(".png") and not f.endswith("mask.png")]
+                 (f.endswith(".png") or f.endswith(".jpg") or f.endswith(".jpeg")) and not f.endswith("mask.png")]
         annotations = [os.path.join(self.root, f) for f in all_files if f.endswith(".txt")]
         if len(images) != len(masks) or len(annotations) != len(images):
             print(f"Error: {len(images)} Images but {len(masks)} masks and {len(annotations)} annotations!")
@@ -669,6 +669,40 @@ class RealWorldDataset(torch.utils.data.Dataset):
         name = self.names[idx]
 
         return img, mask, annotation, name
+
+    def __len__(self):
+        return len(self.images)
+
+class RealWorldDatasetRaw(torch.utils.data.Dataset):
+    def __init__(self, data_path):
+        self.root = data_path
+        all_files = [f for f in os.listdir(self.root) if os.path.isfile(os.path.join(self.root, f))]
+        # masks = [os.path.join(self.root, f) for f in all_files if f.endswith("mask.png")]
+        images = [os.path.join(self.root, f) for f in all_files if
+                  (f.endswith(".png") or f.endswith(".jpg") or f.endswith(".jpeg")) and not f.endswith("mask.png")]
+        names = [os.path.splitext(f)[0] for f in all_files if
+                 (f.endswith(".png") or f.endswith(".jpg") or f.endswith(".jpeg")) and not f.endswith("mask.png")]
+        self.images = sorted(images)
+        self.names = sorted(names)
+        print(self.names)
+
+        print(f"Real World Dataset: {len(self.images)} images from {self.root}")
+
+    def __getitem__(self, idx):
+        pil_img = Image.open(self.images[idx])
+        pil_img = pil_img.convert("RGB")
+        size = pil_img.size
+        pil_img = pil_img.resize((224, 224))
+        img = np.array(pil_img)
+
+        img = torch.as_tensor(img) # to torch
+        img = img.permute((2, 0, 1))
+        img = F.convert_image_dtype(img, torch.float) # as float
+        img = F.normalize(img, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)) # normalized
+
+        name = self.names[idx]
+
+        return img, name, size
 
     def __len__(self):
         return len(self.images)
