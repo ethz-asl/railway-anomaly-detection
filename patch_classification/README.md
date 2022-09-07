@@ -53,6 +53,19 @@ pip install notebook
 python -m ipykernel install --user --name=patch_classification
 ```
 
+## Create masks for Real-World dataset
+First, create a directory with images similar to the real_world_dataset_raw directory. 
+In principle, the skript can process images of any size, they are simply scaled to 224x224 and thenmrescaled back. 
+However, the model works best if the images are already cropped similar to the ones the model was trained on (so 224x224).
+By setting the threshold high (e.g. 0.9), obstacles are more often classified as railway track, which is what we want.
+(The best obstacle detection performance is for 0.3, so rather low). Simply run
+```
+cd railway-anomaly-detection/patch_classification 
+python real_world_masking --threshold 0.9 --data_path /path/to/dataset_raw/directory # you can use --visualize 1 to enable visualizations (stored in output directory)
+```
+
+
+
 ## Evaluate on Real-World dataset
 
 First, create a directory with your dataset similar to the real_world_dataset directory. 

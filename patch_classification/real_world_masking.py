@@ -208,8 +208,8 @@ def get_args_parser(add_help=True):
 
     parser = argparse.ArgumentParser(description="PyTorch Segmentation Training", add_help=add_help)
 
-    parser.add_argument("--data_path", default="./real_world_dataset_unmasked", type=str, help="dataset path")
-    parser.add_argument("--output_path", default="./real_world_dataset_unmasked", type=str, help="output directory")
+    parser.add_argument("--data_path", default="./real_world_dataset_raw", type=str, help="dataset path")
+    parser.add_argument("--output_path", default="./real_world_dataset_raw", type=str, help="output directory")
     parser.add_argument("--config", default="deeplabv3", choices=["deeplabv3"], type=str, help="which config/model to evaluate")
     parser.add_argument("--threshold", default=0.9, type=float,
                         help="which threshold to use for masking, the higher, the more railway!")
