@@ -69,14 +69,27 @@ python real_world_masking --threshold 0.9 --data_path /path/to/dataset_raw/direc
 ## Evaluate on Real-World dataset
 
 First, create a directory with your dataset similar to the real_world_dataset directory. 
-Images should be in <image_name>.png format, the corresponding masks should be named <image_name>_mask.png,
-and the annotations file <image_name>.txt should contain 5 integers separated by a space.
-The first one contains a 1 if there is an obstacle present and a 0 if not. The last 4 integers indicate the 
-left-most, up-most, right-most, down-most pixels of the obstacle bounding box. Then
+Images should be in <image_name>.png format, the corresponding railway segmentation masks should be named 
+<image_name>_mask.png, where 1s denote pixels that contain railway and 0 pixels that do not contain railway.
+
+There are two possibilities to provide annotations. Either use an <image_name>_obstacle.png file, which contains a mask
+with 1s at the obstacle locations and 0s everywhere else. This allows for computation of both AUROC and F1 score. 
+For this option, use 
 ```
 cd railway-anomaly-detection/patch_classification 
 mkdir real_world_results # that's where results are stored  
-python real_world_evaluation --config patchclass --data_path /path/to/dataset/directory # check -h to see options for config
+python real_world_evaluation --config patchclass --data_path /path/to/dataset/directory --obstacle_segmentation 1 # check -h to see options for config
+```
+
+Alternatively, use annotation files <image_name>.txt (<image_name>_obstacle.png files are ignored if present), 
+which should contain 5 integers separated by a space.
+The first one contains a 1 if there is an obstacle present and a 0 if not. The last 4 integers indicate the 
+left-most, up-most, right-most, down-most pixels of the obstacle bounding box. Only F1 score is computed, since no
+obstacle mask is used. For this option, use 
+```
+cd railway-anomaly-detection/patch_classification 
+mkdir real_world_results # that's where results are stored  
+python real_world_evaluation --config patchclass --data_path /path/to/dataset/directory --obstacle_segmentation 0 # check -h to see options for config
 ```
 
 ## Train Auto-encoder

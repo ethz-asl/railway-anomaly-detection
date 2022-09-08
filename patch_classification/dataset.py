@@ -633,9 +633,9 @@ class RealWorldDataset(torch.utils.data.Dataset):
         all_files = [f for f in os.listdir(self.root) if os.path.isfile(os.path.join(self.root, f))]
         masks = [os.path.join(self.root, f) for f in all_files if f.endswith("mask.png")]
         images = [os.path.join(self.root, f) for f in all_files if
-                  (f.endswith(".png") or f.endswith(".jpg") or f.endswith(".jpeg")) and not f.endswith("mask.png")]
+                  (f.endswith(".png") or f.endswith(".jpg") or f.endswith(".jpeg")) and (not f.endswith("mask.png") and not f.endswith("obstacle.png"))]
         names = [os.path.splitext(f)[0] for f in all_files if
-                 (f.endswith(".png") or f.endswith(".jpg") or f.endswith(".jpeg")) and not f.endswith("mask.png")]
+                 (f.endswith(".png") or f.endswith(".jpg") or f.endswith(".jpeg")) and (not f.endswith("mask.png") and not f.endswith("obstacle.png"))]
         annotations = [os.path.join(self.root, f) for f in all_files if f.endswith(".txt")]
         if len(images) != len(masks) or len(annotations) != len(images):
             print(f"Error: {len(images)} Images but {len(masks)} masks and {len(annotations)} annotations!")
@@ -669,6 +669,56 @@ class RealWorldDataset(torch.utils.data.Dataset):
         name = self.names[idx]
 
         return img, mask, annotation, name
+
+    def __len__(self):
+        return len(self.images)
+
+class RealWorldDataset2(torch.utils.data.Dataset):
+    def __init__(self, data_path):
+        self.root = data_path
+        all_files = [f for f in os.listdir(self.root) if os.path.isfile(os.path.join(self.root, f))]
+        masks = [os.path.join(self.root, f) for f in all_files if f.endswith("mask.png")]
+        annotations = [os.path.join(self.root, f) for f in all_files if f.endswith("obstacle.png")]
+        images = [os.path.join(self.root, f) for f in all_files if
+                  (f.endswith(".png") or f.endswith(".jpg") or f.endswith(".jpeg")) and (not f.endswith("mask.png") and not f.endswith("obstacle.png"))]
+        names = [os.path.splitext(f)[0] for f in all_files if
+                 (f.endswith(".png") or f.endswith(".jpg") or f.endswith(".jpeg")) and (not f.endswith("mask.png") and not f.endswith("obstacle.png"))]
+        if len(images) != len(masks) or len(annotations) != len(images):
+            print(f"Error: {len(images)} Images but {len(masks)} masks and {len(annotations)} annotations!")
+            return
+        self.masks = sorted(masks)
+        self.images = sorted(images)
+        self.names = sorted(names)
+        print(self.names)
+        self.annotations = sorted(annotations)
+
+        print(f"Real World Dataset: {len(self.images)} images from {self.root}")
+
+    def __getitem__(self, idx):
+        pil_img = Image.open(self.images[idx])
+        pil_img = pil_img.convert("RGB")
+        img = np.array(pil_img)
+        pil_mask = Image.open(self.masks[idx])
+        pil_mask = pil_mask.convert("L")
+        mask = np.array(pil_mask)
+        pil_anno = Image.open(self.annotations[idx])
+        pil_anno = pil_anno.convert("L")
+        anno = np.array(pil_anno)
+
+        img = torch.as_tensor(img) # to torch
+        img = img.permute((2, 0, 1))
+        img = F.convert_image_dtype(img, torch.float) # as float
+        img = F.normalize(img, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)) # normalized
+
+        mask = torch.as_tensor(mask, dtype=torch.int64)
+        mask = torch.unsqueeze(mask, 0)
+
+        anno = torch.as_tensor(anno, dtype=torch.int64)
+        anno = torch.unsqueeze(anno, 0)
+
+        name = self.names[idx]
+
+        return img, mask, anno, name
 
     def __len__(self):
         return len(self.images)

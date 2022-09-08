@@ -10,9 +10,10 @@ from torch import nn
 from PIL import Image
 from PIL import ImageDraw
 
-from dataset import RealWorldDataset
+from dataset import RealWorldDataset, RealWorldDataset2
 from autoencoder_networks import AeSegParam02
 from torchgeometry.losses.ssim import SSIM
+from sklearn.metrics import roc_curve, auc
 from patchclass_networks import PatchClassModel, PatchSegModelLight
 from torchvision.transforms import functional as F
 
@@ -150,6 +151,7 @@ def evaluate(args, ae_model, ae_model_name, model, model_name, data_loader, g_ac
     stat_book["images_fp"] = list()
     stat_book["images_fn_correct"] = list()
     stat_book["conf_correct"] = {"tp": 0, "fp": 0, "tn": 0, "fn": 0}
+    stat_book["auroc_data"] = np.zeros((1001, 2))
 
     storage = list()
 
@@ -169,12 +171,17 @@ def evaluate(args, ae_model, ae_model_name, model, model_name, data_loader, g_ac
             print(f"Image {name} ...")
             idx_results = dict()
 
-            image, target_seg = image.to(device), target.to(device)
-            target_seg_orig = target_seg.clone().to(device)
+            image, target_seg_orig = image.to(device), target.to(device)
+            #target_seg_orig = target_seg.clone().to(device)
 
             # Mask for evaluation (discard background)
             evaluation_mask = target_seg_orig == 1
-            target_seg[torch.logical_not(evaluation_mask)] = 0
+
+            if args.obstacle_segmentation > 0:
+                target_seg = annotation.to(device)
+                target_seg[torch.logical_not(evaluation_mask)] = 0
+                target_seg_masked = target_seg.clone().type(torch.FloatTensor)
+
             evaluation_mask = evaluation_mask.squeeze()
 
             # Visualize original image
@@ -299,9 +306,27 @@ def evaluate(args, ae_model, ae_model_name, model, model_name, data_loader, g_ac
                 found_obstacle = 0
 
             # Compute whether an obstacle can be found in groundtruth:
-            target_seg_masked = target_seg.clone().type(torch.FloatTensor)
-            has_obstacle = annotation[0][0]
-            l_bb, u_bb, r_bb, d_bb = annotation[0][1], annotation[0][2], annotation[0][3], annotation[0][4]
+            if args.obstacle_segmentation > 0:
+                if torch.max(target_seg_masked) == 1:
+                    has_obstacle = 1
+                    # get bounding box
+                    target_seg_masked_pil = presets.torch_mask_to_pil(target_seg_masked)
+                    l_bb, u_bb, r_bb, d_bb = target_seg_masked_pil.getbbox()
+                else:
+                    has_obstacle = 0
+                # Binned data for AUROC
+                if has_obstacle:
+                    for i in range(224):
+                        for j in range(224):
+                            if evaluation_mask[i, j]:
+                                val = int(output_seg[i, j] * 1000)
+                                if target_seg_masked[0, 0, i, j] == 1:
+                                    stat_book["auroc_data"][val, 1] += 1
+                                else:
+                                    stat_book["auroc_data"][val, 0] += 1
+            else:
+                has_obstacle = annotation[0][0]
+                l_bb, u_bb, r_bb, d_bb = annotation[0][1], annotation[0][2], annotation[0][3], annotation[0][4]
 
             # Check whether found obstacle was correct
             if found_obstacle == 1 and has_obstacle == 1 and l_bb < centroid_x < r_bb and u_bb < centroid_y < d_bb:
@@ -366,6 +391,11 @@ def evaluate(args, ae_model, ae_model_name, model, model_name, data_loader, g_ac
 
             storage.append(idx_results)
 
+        # Compute global metrics:
+        if args.obstacle_segmentation > 0:
+            fpr_list, tpr_list, thr_list, auc = roc_curve(stat_book["auroc_data"])
+            roc_auc = auc(fpr_list, tpr_list)
+
         tp = stat_book["conf_correct"]["tp"]
         fp = stat_book["conf_correct"]["fp"]
         tn = stat_book["conf_correct"]["tn"]
@@ -400,6 +430,10 @@ def evaluate(args, ae_model, ae_model_name, model, model_name, data_loader, g_ac
         else:
             f1 = -1
         output_string = ""
+        if args.obstacle_segmentation > 0:
+            output_string += f"AUROC: {roc_auc:.3f}\n\n"
+        else:
+            output_string += f"AUROC not available (no obstacle mask)\n\n"
         output_string += f"CONFMAT METRICS:\n\n"
         output_string += f"             \t Obstacle     No Obstacle\n"
         output_string += f"Detection:   \t  {tp:4d}          {fp:4d}           |   {pp:4d}\n"
@@ -499,10 +533,40 @@ def get_model_students(teacher_checkpoint_name, student1_checkpoint_name, studen
 
     return teacher, student1, student2, student3, mean_teacher, std_teacher
 
+def roc_curve(roc_data):
+    max_thres = roc_data.shape[0] # 1001 in our case (threshold is from >= 0 (all) to >= 1001 (none)
+    fpr_list = np.empty((max_thres+1,))
+    tpr_list = np.empty((max_thres+1,))
+    thr_list = np.empty((max_thres+1,))
+    # >= 1001:
+    fpr_list[max_thres] = 0
+    tpr_list[max_thres] = 0
+    thr_list[max_thres] = max_thres
+    # i in [1000, 1]
+    for i in range(max_thres - 1, 0, -1):
+        thr_list[i] = i
+        tp = np.sum(roc_data[i:, 1])
+        fp = np.sum(roc_data[i:, 0])
+        tn = np.sum(roc_data[:i, 0])
+        fn = np.sum(roc_data[:i, 1])
+        tpr = float(tp / (tp + fn))
+        fpr = float(fp / (fp + tn))
+        tpr_list[i] = tpr
+        fpr_list[i] = fpr
+    # >= 0:
+    fpr_list[0] = 1
+    tpr_list[0] = 1
+    thr_list[0] = 0
+
+    return fpr_list, tpr_list, thr_list, auc
+
 def main(args):
     device = torch.device("cpu")
     # Create Dataset
-    dataset_test = RealWorldDataset(args.data_path)
+    if args.obstacle_segmentation > 0:
+        dataset_test = RealWorldDataset2(args.data_path)
+    else:
+        dataset_test = RealWorldDataset(args.data_path)
     print("Dataset loaded.")
     test_sampler = torch.utils.data.SequentialSampler(dataset_test)
     data_loader_test = torch.utils.data.DataLoader(
@@ -559,6 +623,7 @@ def get_args_parser(add_help=True):
 
     parser.add_argument("--data_path", default="./real_world_dataset", type=str, help="dataset path")
     parser.add_argument("--output_path", default="./real_world_results", type=str, help="output directory")
+    parser.add_argument("--obstacle_segmentation", default=1, type=int, help="whether to use existing obstacle segmentation <name>_obstacle.png (0 or 1)")
     parser.add_argument("--config", default="patchclass", choices=["deeplabv3", "ae_rmse", "ae_ssim", "patchclass",
                                                                    "patchdiff_mse", "patchdiff_ssim", "patchdiff_gan",
                                                                    "patchdiff_gan+hist", "students"], type=str, help="which config/model to evaluate")
